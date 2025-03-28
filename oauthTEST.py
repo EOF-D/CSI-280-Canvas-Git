@@ -1,6 +1,8 @@
 import time
 import json
 
+path  = "/Users/lukamoon/PycharmProjects/CSI-280-Canvas-Git/canvas/oauth/json_token.json"
+
 class TokenStorage:
     def __init__(self, access_token, refresh_token, expires_in, token_type = 'Bearer'):
         self.access_token = access_token
@@ -26,12 +28,12 @@ class TokenStorage:
         self.refresh_token = data.get("refresh_token")
         self.expires_in = time.time() + data["expires_in"]
 
-    def save_file(self, filename = "token.json"):
+    def save_file(self, filename = "json_json_token.json"):
         with open(filename, "w") as file:
             json.dump(self.to_dict(), file)
 
     @classmethod
-    def load_from_file(cls, filename="token.json"):
+    def load_from_file(cls, filename="json_token.json"):
         try:
             with open(filename, "r") as file:
                 data = json.load(file)
@@ -43,6 +45,10 @@ class TokenStorage:
                 )
         except (FileNotFoundError, KeyError):
             return None
+
+with open(path, 'r') as handle:
+    parsed = json.load(handle)
+print(json.dumps(parsed, indent=4))
 
 token = TokenStorage(access_token="aaa524", expires_in=3600, refresh_token="refresh_155")
 print("token expired: ", token.check_expired())
