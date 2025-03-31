@@ -44,8 +44,8 @@ class Course(Model):
         
         request_data = {
             "course": {
-                "name": course_data.get("name", "Unnamed Course"),
-                "course_code": course_data.get("course_code"),
+                "name": course_data["name"],  # Required field, no default
+                "course_code": course_data["course_code"],  # Required field
                 "start_at": course_data.get("start_at"),
                 "end_at": course_data.get("end_at"),
                 "license": course_data.get("license"),
@@ -54,7 +54,6 @@ class Course(Model):
                 "public_syllabus": course_data.get("public_syllabus", False),
                 "public_syllabus_to_auth": course_data.get("public_syllabus_to_auth", False),
                 "public_description": course_data.get("public_description"),
-                # Include all other course parameters as needed
             },
             "offer": course_data.get("offer", False),
             "enroll_me": course_data.get("enroll_me", False),
@@ -62,5 +61,5 @@ class Course(Model):
         }
         
         response = await client.post(endpoint, json=request_data)
-        return cls.from_json(response, client=client, account_id=account_id)
-      
+        course_json = response.json()  # Get JSON data from response
+        return cls.from_json(course_json, client=client)
