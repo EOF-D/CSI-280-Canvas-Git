@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import asyncio
 from attrs import define, field
 from canvas import CanvasAuth, CanvasAPIClient, CanvasScope, Model
-from typing import Dict, Any, Optional
 
 __all__ = ("Course",)
 
