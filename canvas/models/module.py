@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 from attrs import define, field
-from canvas import CanvasAuth, CanvasAPIClient, CanvasScope, Model
-from datetime import datetime
+from ..rest import CanvasAPIClient
+from .base import Model
 
-__all__ = ("Course",)
+__all__ = ("Module",)
 
 
 @define
 class Module(Model):
     client: CanvasAPIClient = field()
-    
+
     id: int
     name: str
     position: int

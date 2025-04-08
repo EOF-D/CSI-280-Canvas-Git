@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from attrs import define, field
-from canvas import CanvasAuth, CanvasAPIClient, CanvasScope, Model
+from ..rest import CanvasAPIClient
+from .base import Model
 
 __all__ = ("Course",)
 
@@ -17,6 +18,3 @@ class Course(Model):
     start_at: str | None
     end_at: str | None
     # Add other course attributes as needed
-
-
-      
