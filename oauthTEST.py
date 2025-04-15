@@ -1,58 +1,85 @@
-import time
+from cryptography.fernet import Fernet
 import json
+import time
+import os
 
-path  = "/Users/lukamoon/PycharmProjects/CSI-280-Canvas-Git/canvas/oauth/json_token.json"
+key_file = "C:\\Users\\ktmcw\\Desktop\\key.key"
+path = "C:\\Users\\ktmcw\\Desktop\\json_token.json"
 
-class TokenStorage:
-    def __init__(self, access_token, refresh_token, expires_in, token_type = 'Bearer'):
-        self.access_token = access_token
-        self.refresh_token = refresh_token
-        self.expires = expires_in + time.time()
-        self.token_type = token_type
+def save_key(key, key_file_path):
 
-    def check_expired(self) -> bool:
-        #check if token is expired
-        return time.time() > self.expires
+    try:
+        with open(key_file_path, "wb") as file:
+            file.write(key)
+        print("key saved")
+    except Exception as e:
+        print("failed to save key")
 
-    def to_dict(self) -> dict:
-        return {"access_token": self.access_token,
-            "token_type": self.token_type,
-            "refresh_token": self.refresh_token,
-            "expires_in": int(self.expires - time.time()),  # Remaining time
-            "expiry_time": self.expires
-                }
+def get_key(key_path):
+    try:
+        if os.path.exists(key_path):  # check if the file exists
+            with open(key_path, "rb") as file:
+                key = file.read()
+                print("key loaded")
+                return key
+        else:
+            # if it doesnt make a new one
+            print("generating new key")
+            key = Fernet.generate_key()
+            save_key(key, key_path)
+            return key
 
-    def from_dict(self, data: dict):
-        self.access_token = data["access_token"]
-        self.token_type = data.get("token_type", "Bearer")
-        self.refresh_token = data.get("refresh_token")
-        self.expires_in = time.time() + data["expires_in"]
+    except Exception as e:
+        print("failed to retrieve key: {e}")
+        return None
 
-    def save_file(self, filename = "json_json_token.json"):
-        with open(filename, "w") as file:
-            json.dump(self.to_dict(), file)
+def check_token_expired(expiry_time) -> bool:
+    # check if its expired
+    return time.time() > expiry_time
 
-    @classmethod
-    def load_from_file(cls, filename="json_token.json"):
-        try:
-            with open(filename, "r") as file:
-                data = json.load(file)
-                return cls(
-                    access_token=data["access_token"],
-                    expires_in=int(data["expiry_time"] - time.time()),
-                    refresh_token=data.get("refresh_token"),
-                    token_type=data.get("token_type", "Bearer")
-                )
-        except (FileNotFoundError, KeyError):
+def save_token_to_file(token, filename, key_path):
+    key = get_key(key_path)
+
+    if key:
+        fernet_thing = Fernet(key) # create a fernet object for encryption/decryption
+        data = json.dumps(token).encode()
+        enc = fernet_thing.encrypt(data)
+
+        with open(filename, "wb") as file:
+            file.write(enc)
+        print("encrypted token saved to file")
+
+    else:
+        print("no valid key found")
+
+def load_token_from_file(filename, key_path):
+    try:
+        key = get_key(key_path)
+
+        if key: #make sure the key is valid
+            fernet_thing = Fernet(key)
+
+            with open(filename, "rb") as file:
+                data_enc = file.read()
+                data = fernet_thing.decrypt(data_enc)
+                data = json.loads(data.decode())  # convert decrypted to json
+                print(f"token loaded and decrypted from {filename}")
+                return data
+
+        else:
+            print("ERR: cannot load token/no valid key found.")
             return None
+    except Exception as e:
+        print(f"ERR: failed to load/decrypt token: {e}")
+        return None
 
-with open(path, 'r') as handle:
-    parsed = json.load(handle)
-print(json.dumps(parsed, indent=4))
+with open(path, "r") as file:
+    token_data = json.load(file)
 
-token = TokenStorage(access_token="aaa524", expires_in=3600, refresh_token="refresh_155")
-print("token expired: ", token.check_expired())
-token.save_file()
-loaded_token = TokenStorage.load_from_file()
+print("token expired?:", check_token_expired(token_data["expiry_time"]))
+
+save_token_to_file(token_data, "C:\\Users\\ktmcw\\Desktop\\encrypted_token.json", key_file)
+
+loaded_token = load_token_from_file("C:\\Users\\ktmcw\\Desktop\\encrypted_token.json", key_file)
 if loaded_token:
-    print("loaded token:", loaded_token.to_dict())
+    print("token:", loaded_token)
