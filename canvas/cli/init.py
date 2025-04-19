@@ -7,12 +7,14 @@ Implements init command for the CLI.
 from __future__ import annotations
 
 import json
+import pickle
 from argparse import Namespace
 from pathlib import Path
 from typing import Any
 
 from canvasapi import Canvas
 from canvasapi.module import Module
+from cryptography.fernet import Fernet
 
 from canvas.cli.base import CanvasCommand
 
@@ -49,7 +51,8 @@ class InitCommand(CanvasCommand):
         metadata_file = canvas_dir / "metadata.json"
         staged_file = canvas_dir / "staged.json"
         config_file = canvas_dir / "config.json"
-        token_file = canvas_dir / "token.json"
+        key_file = canvas_dir / "key.key"
+        token_file = canvas_dir / "token.pickle"
 
         with open(metadata_file, "w") as f:
             json.dump(metadata, f)
@@ -57,8 +60,10 @@ class InitCommand(CanvasCommand):
             json.dump([], f)
         with open(config_file, "w") as f:
             json.dump({}, f)
-        with open(token_file, "w") as f:
-            json.dump({}, f)
+        with open(key_file, "wb") as f:
+            f.write(Fernet.generate_key())
+
+        token_file.touch()
 
     def _clone_module_item(self, item, module_dir: Path) -> dict[str, Any]:
         """Get the item data from the API."""
