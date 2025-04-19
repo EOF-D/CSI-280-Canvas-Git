@@ -7,10 +7,14 @@ Implements the base command for the CLI.
 from __future__ import annotations
 
 import json
+import pickle
 from typing import Any
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from cryptography.fernet import Fernet
+
+from .. import OAuthToken
 from ..errors import CLIError
 
 __all__ = (
@@ -24,6 +28,10 @@ class NotCanvasCourseException(CLIError):
 
     Note that not all commands need to be run from inside a canvas course.
     """
+
+
+class TokenCacheException(CLIError):
+    """Raised when a token isn't cached."""
 
 
 class CanvasCommand(ABC):
@@ -40,6 +48,8 @@ class CanvasCommand(ABC):
     @classmethod
     def get_course_root(cls) -> Path:
         """Find the root directory of the course.
+
+        :raises NotCanvasCourseException: Not inside a canvas course.
 
         :return: Path to the course's root directory (contains .canvas).
         :rtype: Path
@@ -60,6 +70,8 @@ class CanvasCommand(ABC):
     def get_course_canvas_dir(cls) -> Path:
         """Find the .canvas directory of the course.
 
+        :raises NotCanvasCourseException: Not inside a canvas course.
+
         :return: Path to the course's .canvas directory.
         :rtype: Path
         """
@@ -67,6 +79,14 @@ class CanvasCommand(ABC):
 
     @classmethod
     def get_metadata(cls, key: str) -> Any:
+        """Get course metadata given a key.
+
+        :raises NotCanvasCourseException: Not inside a canvas course.
+        :raises KeyError: Key not found in metadata.
+
+        :return: The metadata value.
+        :rtype: Any
+        """
         canvas_folder = cls.get_course_canvas_dir()
 
         metadata_file = canvas_folder / "metadata.json"
@@ -76,8 +96,8 @@ class CanvasCommand(ABC):
 
         if key in metadata:
             return metadata[key]
-
-        return None
+        else:
+            raise KeyError
 
     @classmethod
     def find_first_tracked_parent(cls, path: Path) -> tuple[Path, Any]:
@@ -87,6 +107,49 @@ class CanvasCommand(ABC):
             tracked = cls.get_metadata(str(path.absolute()))
 
         return path, tracked
+
+    @classmethod
+    def load_fernet_key(cls) -> bytes:
+        canvas_folder = cls.get_course_canvas_dir()
+        with open(canvas_folder / "key.key", "rb") as key_file:
+            key = key_file.read()
+        return key
+
+    @classmethod
+    def load_token(cls) -> OAuthToken:
+        canvas_folder = cls.get_course_canvas_dir()
+
+        token_file = canvas_folder / "token.pickle"
+
+        key = cls.load_fernet_key()
+        fernet = Fernet(key)
+
+        with open(token_file, "rb") as f:
+            encrypted_token = f.read()
+
+        if not encrypted_token:
+            raise TokenCacheException
+
+        pickled_token = fernet.decrypt(encrypted_token)
+        token = pickle.loads(pickled_token)
+
+        return token
+
+    @classmethod
+    def save_token(cls, token: OAuthToken) -> None:
+        canvas_folder = cls.get_course_canvas_dir()
+
+        token_file = canvas_folder / "token.pickle"
+
+        pickled_token = pickle.dumps(token)
+
+        key = cls.load_fernet_key()
+        fernet = Fernet(key)
+
+        encrypted_token = fernet.encrypt(pickled_token)
+
+        with open(token_file, "wb") as f:
+            f.write(encrypted_token)
 
     @abstractmethod
     def execute(self) -> None:

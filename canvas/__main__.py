@@ -1,3 +1,5 @@
+# pyright: reportPrivateUsage=false
+
 from __future__ import annotations
 
 import os
@@ -7,6 +9,8 @@ from canvasapi import Canvas
 from dotenv import load_dotenv
 
 from canvas import CanvasScope
+from canvas.cli import CanvasCommand, NotCanvasCourseException
+from canvas.cli.base import TokenCacheException
 from .oauth import CanvasAuth
 from canvas.cli.manager import CommandManager
 
@@ -22,11 +26,11 @@ async def main() -> None:
         return
 
     scopes = (
-        CanvasScope.SHOW_ACCESS_TOKEN
-        | CanvasScope.CREATE_ACCESS_TOKEN
-        | CanvasScope.UPDATE_ACCESS_TOKEN
-        | CanvasScope.DELETE_ACCESS_TOKEN
-        | CanvasScope.UPLOAD_SUBMISSION_FILE
+            CanvasScope.SHOW_ACCESS_TOKEN
+            | CanvasScope.CREATE_ACCESS_TOKEN
+            | CanvasScope.UPDATE_ACCESS_TOKEN
+            | CanvasScope.DELETE_ACCESS_TOKEN
+            | CanvasScope.UPLOAD_SUBMISSION_FILE
     )
 
     auth = CanvasAuth(
@@ -36,10 +40,21 @@ async def main() -> None:
         scopes=scopes,
     )
 
-    await auth.authenticate()
+    # Generate token or load from cache
+    try:
+        _token = CanvasCommand.load_token()
+        auth._token = _token
+    except (NotCanvasCourseException, TokenCacheException):
+        await auth.authenticate()
+
     token = await auth.fetch_token()
-    
+
     client = Canvas(os.getenv("API_URL"), token)
+
+    try:
+        CanvasCommand.save_token(auth._token)
+    except NotCanvasCourseException:
+        pass
 
     # Run the command
     cmd = CommandManager.get_command(
