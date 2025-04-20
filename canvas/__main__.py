@@ -56,11 +56,16 @@ async def main() -> None:
     except NotCanvasCourseException:
         pass
 
-    # Run the command
+    # Get the command
     cmd = CommandManager.get_command(
         args, client  # pyright: ignore reportArgumentType
     )
-    cmd.execute()
+
+    # Run the command
+    try:
+        cmd.execute()
+    except NotCanvasCourseException:
+        print("Command must be run from inside a canvas course!")
 
 
 if __name__ == "__main__":
