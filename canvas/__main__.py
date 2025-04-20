@@ -14,7 +14,8 @@ from canvas.cli.base import TokenCacheException
 from .oauth import CanvasAuth
 from canvas.cli.manager import CommandManager
 
-async def main() -> None:
+
+async def a_main() -> None:
     """The main entry point for the CLI."""
 
     parser = CommandManager.get_command_parser()
@@ -63,6 +64,10 @@ async def main() -> None:
     cmd.execute()
 
 
-if __name__ == "__main__":
+def main():
     load_dotenv()
-    asyncio.run(main())
+    asyncio.run(a_main())
+
+
+if __name__ == "__main__":
+    main()
