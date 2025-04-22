@@ -31,6 +31,7 @@ class CommandManager:
 
     COMMANDS = {
         "init": InitCommand,
+        "clone": InitCommand,
         "stage": StageCommand,
         "unstage": UnstageCommand,
         "status": StatusCommand,
@@ -57,10 +58,11 @@ class CommandManager:
 
         # Init Command
         init_parser = subparser.add_parser(
-            "init", help="Initialize the course"
+            "init", help="Initialize the course from its id", aliases=["clone"]
         )
         init_parser.add_argument(
-            "-c", "--course_id", help="ID of the canvas course to download"
+            "course_id", help="Path of the file to be staged",
+            nargs="?", default=None
         )
 
         # Stage command

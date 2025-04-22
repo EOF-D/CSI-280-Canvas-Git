@@ -128,8 +128,13 @@ class InitCommand(CanvasCommand):
         """Get the course data from the API."""
         # No course id was supplied
         if self.course_id is None:
-            # Change to showing them a list and asking them to choose
-            print("--course_id flag is required")
+            print("Command must be followed by the id of the course to clone.")
+            print("Courses you can clone:\n")
+            print("ID".ljust(10), "COURSE")
+            print("-"*10, "-"*10)
+            courses = self.client.get_courses()
+            for course in courses:
+                print(str(course.id).ljust(10), course.name)
             return
 
         print("Initializing course...")
