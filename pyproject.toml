@@ -8,7 +8,7 @@ license = "MIT" # TODO: Remove placeholder license once decided by team members.
 
 keywords = ["canvas"]
 homepage = "https://github.com/EOF-D/CSI-280-Canvas-Git"
-packages = [{include = "canvas"}]
+packages = [ {include = "canvas"} ]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -25,6 +25,9 @@ pytest = "^8.3.4"
 pytest-cov = "^6.0.0"
 pytest-asyncio = "^0.25.3"
 coverage = "^7.6.12"
+
+[tool.poetry.scripts]
+canvas = "canvas.__main__:main"
 
 [tool.isort]
 profile = "black"
